@@ -11,6 +11,12 @@ public class BSPDungeon {
 
     static char[][] dungeonMap = new char[DUNGEON_HEIGHT][DUNGEON_WIDTH];
     static Random randomGenerator = new Random();
+    
+    // Metrics tracking
+    static int roomCount = 0;
+    static double mapCoverage = 0.0;
+    static List<Integer> roomCountHistory = new ArrayList<>();
+    static List<Double> mapCoverageHistory = new ArrayList<>();
 
     static class Rectangle {
         int x, y, width, height;
@@ -34,12 +40,12 @@ public class BSPDungeon {
 
             if (shouldSplitHorizontally) {
                 if (height < MINIMUM_ROOM_SIZE * 2) return;
-                int splitPosition = randomGenerator.nextInt(height - MINIMUM_ROOM_SIZE * 2) + MINIMUM_ROOM_SIZE;
+                int splitPosition = randomGenerator.nextInt(Math.max(1, height - MINIMUM_ROOM_SIZE * 2)) + MINIMUM_ROOM_SIZE;
                 leftChild = new Rectangle(x, y, width, splitPosition);
                 rightChild = new Rectangle(x, y + splitPosition, width, height - splitPosition);
             } else {
                 if (width < MINIMUM_ROOM_SIZE * 2) return;
-                int splitPosition = randomGenerator.nextInt(width - MINIMUM_ROOM_SIZE * 2) + MINIMUM_ROOM_SIZE;
+                int splitPosition = randomGenerator.nextInt(Math.max(1, width - MINIMUM_ROOM_SIZE * 2)) + MINIMUM_ROOM_SIZE;
                 leftChild = new Rectangle(x, y, splitPosition, height);
                 rightChild = new Rectangle(x + splitPosition, y, width - splitPosition, height);
             }
@@ -104,10 +110,10 @@ public class BSPDungeon {
         List<Room> allRooms = new ArrayList<>();
 
         for (Rectangle space : finalSpaces) {
-            int roomWidth = randomGenerator.nextInt(space.width - 3) + 3;
-            int roomHeight = randomGenerator.nextInt(space.height - 3) + 3;
-            int roomX = space.x + randomGenerator.nextInt(Math.max(1, space.width - roomWidth));
-            int roomY = space.y + randomGenerator.nextInt(Math.max(1, space.height - roomHeight));
+            int roomWidth = randomGenerator.nextInt(Math.max(1, space.width - 3)) + 3;
+            int roomHeight = randomGenerator.nextInt(Math.max(1, space.height - 3)) + 3;
+            int roomX = space.x + randomGenerator.nextInt(Math.max(1, space.width - roomWidth + 1));
+            int roomY = space.y + randomGenerator.nextInt(Math.max(1, space.height - roomHeight + 1));
 
             Room room = new Room(roomX, roomY, roomX + roomWidth, roomY + roomHeight);
             carveRoom(room);
@@ -118,7 +124,51 @@ public class BSPDungeon {
             connectRooms(allRooms.get(i), allRooms.get(i + 1));
         }
         
+        // Calculate metrics
+        calculateMetrics(allRooms);
+        
         return dungeonMap;
+    }
+    
+    static void calculateMetrics(List<Room> allRooms) {
+        roomCount = allRooms.size();
+        
+        // Calculate map coverage
+        int floorCount = 0;
+        for (int y = 0; y < DUNGEON_HEIGHT; y++) {
+            for (int x = 0; x < DUNGEON_WIDTH; x++) {
+                if (dungeonMap[y][x] == '.') {
+                    floorCount++;
+                }
+            }
+        }
+        
+        int totalArea = DUNGEON_WIDTH * DUNGEON_HEIGHT;
+        mapCoverage = (double) floorCount / totalArea * 100.0;
+        
+        roomCountHistory.add(roomCount);
+        mapCoverageHistory.add(mapCoverage);
+        
+        if (roomCountHistory.size() > 50) {
+            roomCountHistory.remove(0);
+            mapCoverageHistory.remove(0);
+        }
+    }
+    
+    public static int getRoomCount() {
+        return roomCount;
+    }
+    
+    public static double getMapCoverage() {
+        return mapCoverage;
+    }
+    
+    public static List<Integer> getRoomCountHistory() {
+        return new ArrayList<>(roomCountHistory);
+    }
+    
+    public static List<Double> getMapCoverageHistory() {
+        return new ArrayList<>(mapCoverageHistory);
     }
 
     static void printMap() {

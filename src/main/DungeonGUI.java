@@ -9,6 +9,7 @@ public class DungeonGUI extends JFrame {
     
     private static final int CELL_SIZE = 12;
     private DungeonPanel dungeonPanel;
+    private MetricsPanel metricsPanel;
     private JButton generateButton;
     private JLabel statusLabel;
     
@@ -22,12 +23,22 @@ public class DungeonGUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         
+        JTabbedPane tabbedPane = new JTabbedPane();
+        
         // Create the dungeon display panel
         dungeonPanel = new DungeonPanel();
         dungeonPanel.setPreferredSize(new Dimension(
             BSPDungeon.DUNGEON_WIDTH * CELL_SIZE, 
             BSPDungeon.DUNGEON_HEIGHT * CELL_SIZE
         ));
+        
+        // Create metrics panel
+        metricsPanel = new MetricsPanel();
+        metricsPanel.setPreferredSize(new Dimension(800, 400));
+        
+        // Add tabs
+        tabbedPane.addTab("Dungeon View", new JScrollPane(dungeonPanel));
+        tabbedPane.addTab("Metrics", new JScrollPane(metricsPanel));
         
         // Create control panel
         JPanel controlPanel = createControlPanel();
@@ -37,7 +48,7 @@ public class DungeonGUI extends JFrame {
         statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
         
         // Add components to frame
-        add(new JScrollPane(dungeonPanel), BorderLayout.CENTER);
+        add(tabbedPane, BorderLayout.CENTER);
         add(controlPanel, BorderLayout.SOUTH);
         add(statusLabel, BorderLayout.NORTH);
         
@@ -92,6 +103,7 @@ public class DungeonGUI extends JFrame {
             @Override
             protected void done() {
                 dungeonPanel.repaint();
+                metricsPanel.repaint();
                 statusLabel.setText("New dungeon generated successfully!");
             }
         };
